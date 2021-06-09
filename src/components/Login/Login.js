@@ -1,48 +1,88 @@
-import React, { useContext } from 'react';
 import './LogIn.modules.css';
 import firebase from "firebase/app";
 import "firebase/auth";
 import firebaseConfig from './firebase.config';
-
-firebase.initializeApp(firebaseConfig);
+import { useContext } from 'react';
+import { UserContext } from '../../App';
+import { useHistory, useLocation } from 'react-router';
 
 const Login = () => {
+    const [loggedInUser, setLoggedInUser] = useContext(UserContext);
+
+    const history = useHistory();
+    const location = useLocation();
+    const { from } = location.state || { from: { pathname: "/" } };
+
+
+    if (firebase.apps.length === 0) {
+        firebase.initializeApp(firebaseConfig);
+    }
+
     const googleProvider = new firebase.auth.GoogleAuthProvider();
     const handleGoogle = () => {
         firebase.auth()
             .signInWithPopup(googleProvider)
             .then((result) => {
-                var credential = result.credential;
-                var token = credential.accessToken;
-                var user = result.user;
-                console.log(token, user, credential)
-            }).catch((error) => {
-                var errorCode = error.code;
-                var errorMessage = error.message;
-                var email = error.email;
-                var credential = error.credential;
-                console.log(errorCode, errorMessage, email, credential)
+                const { displayName, email } = result.user;
+                const signedInUser = { name: displayName, email }
+                console.log(signedInUser);
+                setLoggedInUser(signedInUser);
+                storeAuthToken();
+                history.replace(from);
 
+            })
+            .catch((error) => {
+                console.log(error)
+            });
+    }
+
+    const storeAuthToken = () => {
+        firebase.auth().currentUser.getIdToken(/* forceRefresh */ true)
+            .then(function (idToken) {
+                sessionStorage.setItem('authToken', idToken);
+            }).catch(function (error) {
+                // Handle error
             });
     }
 
     return (
-        <div class="container">
+        <div className="container">
             <form action="">
                 <h1>Log In Form</h1>
-                <div class="form-group">
-                    <label class="empas" for="">Email</label><br />
-                    <input type="text" class="form-control" required />
+                <div className="form-group">
+                    <label className="empas" htmlFor="">Email</label><br />
+                    <input type="text" className="form-control" required />
                 </div>
-                <div class="form-group">
-                    <span class="empas">Password</span><br />
-                    <input type="text" class="form-control" required />
+                <div className="form-group">
+                    <span className="empas">Password</span><br />
+                    <input type="text" className="form-control" required />
                 </div>
-                <button onClick={handleGoogle} class="btn"> Log In With Google</button><br /><br />
-                <button type="submit" class="btn"> Log In</button>
+                <button type="submit" className="btn"> Log In</button><br /><br />
+                <button onClick={handleGoogle} className="btn"> Log In With Google</button>
             </form>
         </div>
     );
 };
 
 export default Login;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
